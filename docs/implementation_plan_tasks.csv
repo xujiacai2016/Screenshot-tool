@@ -1,0 +1,24 @@
+TaskID,Title,Goal,Input,Output,FilesToModify,Tests,DoD,EstimateDays,Priority
+0,Spike DXGI/BitBlt,验证底层捕获兼容性(DXGI/BitBlt/PrintWindow),测试机环境+测试窗口,兼容性报告+测试日志,docs/spike/dxgi_compat_report.md;tests/Integration/spike_dxgi_test.cs,"集成测试模板(手工运行)：记录成功/失败/截图/日志",报告包含每台机器结果、失败样例、回退建议,3,MUST
+0.2,Spike UIA,验证 UIA ScrollPattern 在目标应用的可用性,Word/Teams/Chrome/Edge实例,UIA 支持清单+失败场景文档,docs/spike/uia_report.md;tests/Integration/spike_uia_test.cs,"集成测试模板(手工)：记录UIA属性读取与滚动行为",文档列出支持/不支持应用与回退触发条件,2,MUST
+2,Test infra & CI,把 NUnit 测试工程接入 CI并验证单元测试可跑,现有测试骨架,CI workflow + README/tests.md,.github/workflows/test.yml;tests/SnapshotMate.Tests/README.md,"单元测试（示例）：ConvertToPhysicalPixels 失败->实现->通过",CI 能运行并通过单元测试,2,MUST
+3,Hotkey & Tray,实现全局热键注册与托盘��口,热键事件/托盘菜单,HotkeyManager;TrayService;OverlayController,src/Hotkey/HotkeyManager.cs;src/Tray/TrayService.cs;src/UI/OverlayController.cs,单元测试：注册/注销/防抖；Tray->OpenOverlay 调用(Mock),热键防抖单元测试通过；Tray菜单调用触发Overlay(Open)被Mock验证,2,MUST
+4,Overlay FreeRect,实现覆盖层自由矩形选区并输出逻辑坐标,鼠标按下/移动/释放事件,CapturedRect 数据结构并调用 CaptureEngine,src/UI/OverlayWindow.*;src/Model/CaptureRect.cs,组件测试：模拟鼠标事件产生正确 Rect(含 DPI mapping),选区坐标在多 DPI 下正确并触发 CaptureEngine 接口,3,MUST
+5,Window Snapper,实现窗口枚举与吸附候选+Tab切换,System EnumWindows 列表,候选列表+WindowDescriptor,src/Window/WindowEnumerator.cs;src/Window/Snapper.cs,单元测试：给定窗口布局返回正确候选并循环切换,吸附候选逻辑单元测试通过并手工验证UI高亮,2,MUST
+6,CaptureEngine & BitBltAdp,实现 CaptureEngine 抽象和 BitBlt 适配器,WindowDescriptor 或 物理矩形,CaptureResult(bitmap path,width,height,code),src/Capture/CaptureEngine.cs;src/Capture/Adapters/BitBltAdapter.cs,单元测试：adapter 异常包装返回标准 ErrorCode;集成：BitBlt 在测试机上能截图,BitBlt 成功截图或记录失败且不崩溃,3,MUST
+7,Settings & Logging,实现 settings.json 持久化和本地日志功能,设置修改/日志写入请求,settings.json + 本地 log 文件,src/Config/SettingsService.cs;src/Logging/Logger.cs,单元测试：Save/Load roundtrip;Logger 在不可写目录回退到 %TEMP%,设置持久化与日志回退测试通过,2,MUST
+8,Single Capture Flow,从 Overlay 到 Annotator 的单张捕获流程,CapturedRect 或 WindowDescriptor,临时 PNG 文件路径并打开 Annotator,src/Flow/SingleCaptureController.cs;src/Annotator/AnnotatorWindow.*,集成测试模板：Mock CaptureEngine 返回图像，验证 Annotator 被调用,当 Capture success 时 Annotator 打开并显示图像,3,MUST
+9,Annotator Basic Tools,实现画笔/矩形/箭头/文字/模糊与 Undo/Redo,图像 + 用户操作序列,annotated_final.png + 可复制到剪贴板,src/Annotator/CanvasModel.cs;src/Annotator/ToolHandlers.cs;src/Annotator/ExportService.cs,单元测试：AnnotationModel 增删改及 Undo/Redo；集成：导出 PNG 可粘贴到 Teams,注释模型与导出测试通过并能复制粘贴,5,MUST
+10,UIA ScrollController,基于 UIA 的滚动控制器读取并执行滚动,目标 UIA element/WindowDescriptor,sequence of fragments + Scroll 状态,src/LongCapture/UiAutomationScrollController.cs,集成测试(Word):读取 total/visible/currentOffset 并 programmatic scroll,在支持 UIA 的应用上能自动抓取多段 fragments,4,MUST
+11,MessageScroll Fallback,实现 PageDown/WM_VSCROLL 回退滚动策略,UIA 不可用检测,回退滚动触发的 fragments,src/LongCapture/MessageScrollFallback.cs,集成测试(Electron/Teams):确认回退能推进内容或提示手动,回退策略触发并有效推进，或提示手动接管,3,MUST
+12,StabilityChecker,实现像素差或时间策略的稳定性检测,prevFrame/currFrame/threshold,maxRetries,返回 isStable 或 trigger ManualTakeover,src/LongCapture/StabilityChecker.cs,单元测试：低差异返回 true，高差异返回 false；达到重试上限触发 manual,稳定性判定和重试逻辑单元测试通过,2,MUST
+13,Manual Takeover UX,失败后切换到手动模式用户按 PageDown 捕获,LongCapture 达到重试上限,手动捕获的 fragment 列表與 UI 提示,src/LongCapture/ManualTakeoverController.cs;UI modal,集成/手工测试：动态页面触发手动接管并按键捕获,用户能通过 ≤3 次 PageDown 完成拼接,2,MUST
+14,Stitch Engine,按 stride 拼接 fragments 并管理 fragments,Fragment[] + overlap,final_stitched.png 或失败保留 fragments,src/Stitch/StitchEngine.cs;src/Stitch/FragmentManager.cs,单元测试：给小集合图片验证偏移并生成合成图；集成测试：在 capture 流中 Stitch 成功或保留 fragments,拼接在单元测试通过且在集成场景下生成可打开 final image,4,MUST
+15,Sticky Header Detection,基于 overlap 相似度裁剪重复 header,相邻 fragments overlap 区域,裁剪后的 fragments 或标记,src/Stitch/StickyHeaderDetector.cs,单元测试：高相似度去重，低相似度不去重,去重单元测试通过且在常见网页上手工验证有效,2/SHOULD
+16,Chunked Write & Memory,估算内存并在超阈值时分块写入,fragments 总尺寸估算 + 可用内存,StitchPlan(chunks) 或提示用户分段,src/Stitch/ChunkedWriter.cs;src/Platform/MemoryEstimator.cs,单元测试：低内存返回 chunk plan；集成测试：大型图分块写成功且无 OOM,3,MUST
+17,DPI Helper,实现多显示器 DPI 坐标转换工具,logical coords + dpi info,physical coords,src/Platform/DpiHelper.cs,单元测试：dpiScale 1.0/1.5/2.0下转换正确;集成手工验证,坐标转换单元测试通过并在高 DPI 环境手工验证,2,MUST
+18,Settings UI,实现最小设置页面并持久化,用户输入 hotkey/savePath/overlap/delay/maxSegments,settings.json 更新並生效,src/UI/SettingsWindow.*;tests/Integration/SettingsPersistenceTest.cs,集成：修改设置并重启验证加载,设置持久化生效并通过集成验证,2/MUST
+19,Error Hints & Guidance,失败时给出用户可执行提示并记录日志,errorCode 输入,用户可操作的提示与日志,src/UI/ErrorHintService.cs,单元测试：错误码->提示映射；集成手动验证提示弹窗,出错场景显示建议操作且日志记录,1.5,MUST
+20,UAT Guide & CSV Template,准备 UAT 指南和 experiment_results.csv 模板,UAT 测试步骤與字段,docs/UAT_GUIDE.md;tools/experiment_results.csv,人工试跑 2-3 场景并收集数据，确认字段齐全,UAT 文档与模板可用并通过试跑,1,MUST
+21,QA Test Coverage & Integration Skeleton,补充单元测试覆盖关键模块并提供集成自动化骨架,已实现模块,测试套件(单元 + 集成 skeleton),tests/*;.github/workflows/test.yml,单元测试覆盖关键函数并 CI 运行通过,关键模块单元测试通过并 CI 可跑,3,MUST
+22,Release Beta Package,打包 Beta 安装包与 README_BETA,已实现二进制與依赖,release zip + docs/README_BETA.md,build/release.ps1;docs/README_BETA.md,在 2 台机器安装并验证基本流程,Beta 包可安装并能完成一次完整场景,2,SHOULD
